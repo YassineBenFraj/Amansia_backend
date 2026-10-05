@@ -33,10 +33,11 @@ class StripePaymentServiceTest {
     @Mock PaiementRepository paiements;
     @Mock CommandeRepository commandes;
     @Mock PanierCommandeService panier;
+    @Mock NotificationService notifications;
     private StripePaymentService service;
 
     @BeforeEach void setUp() {
-        service = new StripePaymentService(paiements, commandes, panier);
+        service = new StripePaymentService(paiements, commandes, panier, notifications);
         ReflectionTestUtils.setField(service, "webhookSecret", SECRET);
         ReflectionTestUtils.setField(service, "currency", "tnd");
     }

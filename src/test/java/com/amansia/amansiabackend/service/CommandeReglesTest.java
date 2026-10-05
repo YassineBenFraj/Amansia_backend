@@ -20,6 +20,7 @@ class CommandeReglesTest {
  @Mock PanierRepository paniers; @Mock LignePanierRepository lignesPanier; @Mock ProduitRepository produits;
  @Mock AdresseService adresses; @Mock PaiementRepository paiements; @Mock AdresseRepository adresseRepository;
  @Mock StockService stockService;
+ @Mock NotificationService notifications;
  @InjectMocks CommandeServiceImpl service;
  Utilisateur utilisateur(){var u=new Utilisateur();u.setId(1);return u;}
  Commande commande(StatutCommande s){var c=new Commande();c.setId(7);c.setUtilisateur(utilisateur());c.setStatut(s);when(commandes.findByIdForUpdate(7)).thenReturn(Optional.of(c));return c;}

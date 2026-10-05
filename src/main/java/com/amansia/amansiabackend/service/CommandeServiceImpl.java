@@ -49,6 +49,7 @@ public class CommandeServiceImpl implements CommandeService {
     private final AdresseService adresseService;
     private final com.amansia.amansiabackend.repository.PaiementRepository paiementRepository;
     private final com.amansia.amansiabackend.repository.AdresseRepository adresseRepository;
+    private final NotificationService notifications;
 
     @Override
     @Transactional(readOnly = true)
@@ -184,7 +185,9 @@ public class CommandeServiceImpl implements CommandeService {
             throw new CommandeAnnulationImpossibleException("Annulation impossible : paiement effectue ou paiement carte en cours ; remboursement non disponible");
         }
         commande.setStatut(StatutCommande.ANNULEE);
-        return convertirEnDTO(commandeRepository.save(commande), ligneCommandeRepository.findByCommandeId(commande.getId()));
+        commandeRepository.save(commande);
+        notifications.orderCancelled(commande);
+        return convertirEnDTO(commande, ligneCommandeRepository.findByCommandeId(commande.getId()));
     }
 
     @Override
@@ -208,7 +211,9 @@ public class CommandeServiceImpl implements CommandeService {
             throw new IllegalArgumentException("Transition de statut non autorisée : " + commande.getStatut() + " vers " + statut);
         }
         commande.setStatut(statut);
-        return convertirEnDTO(commandeRepository.save(commande), ligneCommandeRepository.findByCommandeId(commandeId));
+        commandeRepository.save(commande);
+        notifications.orderStatus(commande);
+        return convertirEnDTO(commande, ligneCommandeRepository.findByCommandeId(commandeId));
     }
 
     private BigDecimal calculerPrixUnitaire(Produit produit, VarianteProduit variante) {

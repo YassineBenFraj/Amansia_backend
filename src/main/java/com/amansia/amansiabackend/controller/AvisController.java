@@ -46,7 +46,11 @@ public class AvisController {
             Authentication authentication,
             @PathVariable Integer produitId) {
         if (!estAdministrateur(authentication)) cataloguePublicService.verifierProduit(produitId);
-        return ResponseEntity.ok(avisService.recupererAvisProduit(produitId, estAdministrateur(authentication)));
+        boolean administrateur = estAdministrateur(authentication);
+        Integer utilisateurId = authentication != null && !administrateur && authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_CLIENT".equals(authority.getAuthority()))
+                ? recupererUtilisateurConnecte(authentication).getId() : null;
+        return ResponseEntity.ok(avisService.recupererAvisProduit(produitId, administrateur, utilisateurId));
     }
 
     @GetMapping("/admin")

@@ -11,7 +11,7 @@ public interface AvisService {
 
     AvisDTO creerAvis(Utilisateur utilisateur, AvisCreationDTO creationDTO);
 
-    List<AvisDTO> recupererAvisProduit(Integer produitId, boolean administrateur);
+    List<AvisDTO> recupererAvisProduit(Integer produitId, boolean administrateur, Integer utilisateurId);
 
     List<AvisDTO> recupererTousAvis();
 

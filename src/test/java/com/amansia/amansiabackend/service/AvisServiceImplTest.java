@@ -2,6 +2,8 @@ package com.amansia.amansiabackend.service;
 
 import com.amansia.amansiabackend.dto.avis.AvisCreationDTO;
 import com.amansia.amansiabackend.dto.avis.AvisDTO;
+import com.amansia.amansiabackend.dto.avis.AvisUpdateDTO;
+import com.amansia.amansiabackend.entity.Avis;
 import com.amansia.amansiabackend.entity.Commande;
 import com.amansia.amansiabackend.entity.Produit;
 import com.amansia.amansiabackend.entity.Utilisateur;
@@ -16,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -39,6 +42,7 @@ class AvisServiceImplTest {
     @Mock
     private LigneCommandeRepository ligneCommandeRepository;
 
+    @Mock private NotificationService notifications;
     @InjectMocks
     private AvisServiceImpl avisService;
 
@@ -77,6 +81,51 @@ class AvisServiceImplTest {
         dto.setNote(6);
 
         assertThrows(IllegalArgumentException.class, () -> avisService.creerAvis(utilisateur(1), dto));
+    }
+
+    @Test
+    void clientSeesOwnPendingReviewButVisitorOnlySeesApprovedReviews() {
+        Avis approved = review(1, 2, true);
+        Avis pending = review(2, 1, false);
+        when(produitRepository.existsById(5)).thenReturn(true);
+        when(avisRepository.findPublicAndOwnedByProduct(5, 1)).thenReturn(List.of(approved, pending));
+        when(avisRepository.findByProduitIdAndApprouveTrueOrderByDateCreationDesc(5)).thenReturn(List.of(approved));
+
+        assertEquals(2, avisService.recupererAvisProduit(5, false, 1).size());
+        assertEquals(1, avisService.recupererAvisProduit(5, false, null).size());
+    }
+
+    @Test
+    void clientEditReturnsToModerationAndNotifiesAdminOnce() {
+        Avis avis = review(8, 1, true);
+        avis.setCommentaire("Ancien commentaire");
+        AvisUpdateDTO dto = new AvisUpdateDTO();
+        dto.setNote(4);
+        dto.setCommentaire("Nouveau commentaire");
+        when(avisRepository.findById(8)).thenReturn(Optional.of(avis));
+        when(avisRepository.save(avis)).thenReturn(avis);
+
+        AvisDTO updated = avisService.modifierAvis(8, avis.getUtilisateur(), dto, false);
+        assertFalse(updated.getApprouve());
+        assertEquals("Nouveau commentaire", updated.getCommentaire());
+        verify(notifications).reviewUpdated(8, avis.getProduit().getNom());
+
+        avisService.modifierAvis(8, avis.getUtilisateur(), dto, false);
+        verify(avisRepository).save(avis);
+        verify(notifications).reviewUpdated(8, avis.getProduit().getNom());
+    }
+
+    private Avis review(Integer id, Integer userId, boolean approved) {
+        Avis avis = new Avis();
+        avis.setId(id);
+        avis.setUtilisateur(utilisateur(userId));
+        Produit produit = new Produit();
+        produit.setId(5);
+        produit.setNom("Table");
+        avis.setProduit(produit);
+        avis.setNote((byte) 4);
+        avis.setApprouve(approved);
+        return avis;
     }
 
     private Utilisateur utilisateur(Integer id) {

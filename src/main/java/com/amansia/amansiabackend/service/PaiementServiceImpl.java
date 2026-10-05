@@ -39,6 +39,7 @@ public class PaiementServiceImpl implements PaiementService {
     private final PanierService panierService;
     private final CommandeService commandeService;
     private final StockService stockService;
+    private final NotificationService notifications;
 
     @Override
     @Transactional(readOnly = true)
@@ -171,6 +172,7 @@ public class PaiementServiceImpl implements PaiementService {
         stripePaymentService.capturerPreparation(dto.getPaymentIntentId());
         paiement.setStatut(StatutPaiement.PAYE); paiement.setDatePaiement(LocalDateTime.now());
         paiementRepository.save(paiement); panierCommandeService.retirerArticlesCommandes(commande);
+        notifications.orderPaid(commande);
         return convertirEnDTO(paiement);
     }
 

@@ -22,6 +22,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.amansia.amansiabackend.repository.NotificationRepository notificationRepository;
 
     @Override
     public UtilisateurDTO creerUtilisateur(UtilisateurCreationDTO utilisateurCreationDTO) {
@@ -119,6 +120,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         try {
             utilisateurRepository.delete(utilisateur);
             utilisateurRepository.flush();
+            notificationRepository.deleteForUser(id);
         } catch (DataIntegrityViolationException exception) {
             throw new IllegalArgumentException(
                     "Cet utilisateur possède des données liées et ne peut pas être supprimé. Désactivez son compte.");

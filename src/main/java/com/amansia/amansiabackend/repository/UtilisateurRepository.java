@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
+import com.amansia.amansiabackend.entity.Role;
 
 @Repository
 public interface UtilisateurRepository extends JpaRepository<Utilisateur, Integer> {
@@ -14,5 +16,6 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Intege
     boolean existsByEmail(String email);
 
     boolean existsByPhotoProfil(String photoProfil);
+    List<Utilisateur> findByRoleAndActifTrue(Role role);
 
 }

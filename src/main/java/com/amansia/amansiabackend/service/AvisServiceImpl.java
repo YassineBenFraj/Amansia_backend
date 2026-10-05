@@ -32,6 +32,7 @@ public class AvisServiceImpl implements AvisService {
     private final ProduitRepository produitRepository;
     private final CommandeRepository commandeRepository;
     private final LigneCommandeRepository ligneCommandeRepository;
+    private final NotificationService notifications;
 
     @Override
     public AvisDTO creerAvis(Utilisateur utilisateur, AvisCreationDTO creationDTO) {
@@ -61,18 +62,22 @@ public class AvisServiceImpl implements AvisService {
         avis.setNote(creationDTO.getNote().byteValue());
         avis.setCommentaire(normaliserCommentaire(creationDTO.getCommentaire()));
         avis.setApprouve(false);
-        return convertirEnDTO(avisRepository.save(avis));
+        Avis saved = avisRepository.save(avis);
+        notifications.newReview(saved.getId(), produit.getNom());
+        return convertirEnDTO(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AvisDTO> recupererAvisProduit(Integer produitId, boolean administrateur) {
+    public List<AvisDTO> recupererAvisProduit(Integer produitId, boolean administrateur, Integer utilisateurId) {
         if (!produitRepository.existsById(produitId)) {
             throw new ProduitNotFoundException(produitId);
         }
         List<Avis> avis = administrateur
                 ? avisRepository.findByProduitIdOrderByDateCreationDesc(produitId)
-                : avisRepository.findByProduitIdAndApprouveTrueOrderByDateCreationDesc(produitId);
+                : utilisateurId != null
+                    ? avisRepository.findPublicAndOwnedByProduct(produitId, utilisateurId)
+                    : avisRepository.findByProduitIdAndApprouveTrueOrderByDateCreationDesc(produitId);
         return avis.stream().map(this::convertirEnDTO).toList();
     }
 
@@ -101,12 +106,21 @@ public class AvisServiceImpl implements AvisService {
         Avis avis = avisRepository.findById(avisId).orElseThrow(() -> new AvisNotFoundException(avisId));
         verifierProprietaireOuAdministrateur(avis, utilisateur, administrateur);
 
+        String commentaire = normaliserCommentaire(updateDTO.getCommentaire());
+        if (Objects.equals(avis.getNote(), updateDTO.getNote().byteValue())
+                && Objects.equals(avis.getCommentaire(), commentaire)) {
+            return convertirEnDTO(avis);
+        }
         avis.setNote(updateDTO.getNote().byteValue());
-        avis.setCommentaire(normaliserCommentaire(updateDTO.getCommentaire()));
+        avis.setCommentaire(commentaire);
         if (!administrateur) {
             avis.setApprouve(false);
         }
-        return convertirEnDTO(avisRepository.save(avis));
+        Avis saved = avisRepository.save(avis);
+        if (!administrateur) {
+            notifications.reviewUpdated(saved.getId(), saved.getProduit().getNom());
+        }
+        return convertirEnDTO(saved);
     }
 
     @Override

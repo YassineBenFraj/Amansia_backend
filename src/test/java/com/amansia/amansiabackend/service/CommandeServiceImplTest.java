@@ -45,6 +45,7 @@ class CommandeServiceImplTest {
     @Mock private AdresseService adresseService;
     @Mock private com.amansia.amansiabackend.repository.PaiementRepository paiementRepository;
     @Mock private com.amansia.amansiabackend.repository.AdresseRepository adresseRepository;
+    @Mock private NotificationService notifications;
     @InjectMocks
     private CommandeServiceImpl commandeService;
 

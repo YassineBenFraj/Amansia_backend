@@ -6,11 +6,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class StockService {
     private final JdbcTemplate jdbc;
+    private final NotificationService notifications;
 
     @Transactional(readOnly = true)
     public java.util.Map<Integer,Integer> disponibiliteProduits() {
@@ -77,10 +79,16 @@ public class StockService {
             throw new IllegalArgumentException("Variante, quantité et motif sont obligatoires.");
         Integer exists = jdbc.queryForObject("SELECT COUNT(*) FROM variantes_produits WHERE id=?",Integer.class,request.varianteId());
         if (exists == null || exists == 0) throw new IllegalArgumentException("Variante introuvable.");
+        StockDTO before = variant(request.varianteId());
+        boolean availableBefore = publicProductAvailable(before.produitId());
         if (request.typeMouvement().equals("SORTIE")) sortir(request.varianteId(),request.quantite());
         else entrer(request.varianteId(),request.quantite());
         tracer(request.varianteId(),request.typeMouvement(),request.quantite(),request.motif().trim(),null,utilisateurId);
-        return lireStocks(null).stream().filter(s -> s.varianteId().equals(request.varianteId())).findFirst().orElseThrow();
+        StockDTO after = variant(request.varianteId());
+        boolean availableAfter = publicProductAvailable(after.produitId());
+        notifications.stockChanged(after.produitId(), after.produitNom(), after.varianteId(), after.reference(),
+                before.quantite(), after.quantite(), after.seuilAlerte(), availableBefore, availableAfter, UUID.randomUUID().toString());
+        return after;
     }
 
     @Transactional
@@ -88,8 +96,12 @@ public class StockService {
         // A reference is unique per order/variant; the enclosing payment transaction prevents duplicate checkout.
         Integer deja = jdbc.queryForObject("SELECT COUNT(*) FROM mouvements_stocks WHERE variante_id=? AND type_mouvement='SORTIE' AND reference=?",Integer.class,varianteId,numeroCommande);
         if (deja != null && deja > 0) return;
+        StockDTO before = variant(varianteId);
         sortir(varianteId,quantite);
         tracer(varianteId,"SORTIE",quantite,"Vente commande",numeroCommande,null);
+        StockDTO after = variant(varianteId);
+        notifications.stockChanged(after.produitId(), after.produitNom(), after.varianteId(), after.reference(),
+                before.quantite(), after.quantite(), after.seuilAlerte(), true, true, "sale:" + numeroCommande + ":" + varianteId);
     }
 
     private void sortir(Integer varianteId, Integer quantite) {
@@ -104,5 +116,15 @@ public class StockService {
     private void tracer(Integer varianteId, String type, Integer quantite, String motif, String reference, Integer utilisateurId) {
         jdbc.update("INSERT INTO mouvements_stocks(variante_id,type_mouvement,quantite,motif,reference,utilisateur_id) VALUES(?,?,?,?,?,?)",
             varianteId,type,quantite,motif,reference,utilisateurId);
+    }
+
+    private StockDTO variant(Integer id) {
+        Integer productId = jdbc.queryForObject("SELECT produit_id FROM variantes_produits WHERE id=?", Integer.class, id);
+        return lireStocks(productId).stream().filter(item -> item.varianteId().equals(id)).findFirst().orElseThrow();
+    }
+
+    private boolean publicProductAvailable(Integer productId) {
+        Boolean active = jdbc.queryForObject("SELECT actif FROM produits WHERE id=?", Boolean.class, productId);
+        return Boolean.TRUE.equals(active) && disponibiliteProduits().getOrDefault(productId, 0) > 0;
     }
 }

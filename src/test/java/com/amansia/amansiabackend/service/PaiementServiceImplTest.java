@@ -38,6 +38,7 @@ class PaiementServiceImplTest {
     @Mock
     private StripePaymentService stripePaymentService;
     @Mock private PanierCommandeService panierCommandeService;
+    @Mock private NotificationService notifications;
 
     @InjectMocks
     private PaiementServiceImpl paiementService;
