@@ -27,6 +27,9 @@ public class Utilisateur {
     @Column(name = "telephone")
     private String telephone;
 
+    @Column(name = "photo_profil", length = 255)
+    private String photoProfil;
+
     @Column(name = "date_naissance")
     private LocalDate dateNaissance;
 
@@ -91,6 +94,10 @@ public class Utilisateur {
     public void setTelephone(String telephone) {
         this.telephone = telephone;
     }
+
+    public String getPhotoProfil() { return photoProfil; }
+
+    public void setPhotoProfil(String photoProfil) { this.photoProfil = photoProfil; }
 
     public LocalDate getDateNaissance() {
         return dateNaissance;

@@ -62,7 +62,8 @@ public class SecurityConfig {
                             "/api/images-produits", "/api/images-produits/{id:[0-9]+}", "/api/images-produits/produit/{id}",
                             "/api/materiaux/actifs", "/api/couleurs/actives",
                             "/api/variantes-produits/produit/{id}/actives", "/api/avis/produit/{id}", "/api/stocks/produit/**").permitAll()
-                        .requestMatchers("/uploads/produits/**", "/uploads/categories/**").permitAll()
+                        .requestMatchers("/uploads/produits/**", "/uploads/categories/**", "/uploads/profils/**").permitAll()
+                        .requestMatchers("/api/utilisateurs/me", "/api/utilisateurs/me/**").hasRole("CLIENT")
                         .requestMatchers("/api/utilisateurs/**").hasRole("ADMINISTRATEUR")
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/categories").hasRole("ADMINISTRATEUR")

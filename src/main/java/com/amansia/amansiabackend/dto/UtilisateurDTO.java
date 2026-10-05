@@ -11,6 +11,7 @@ public class UtilisateurDTO {
     private String prenom;
     private String email;
     private String telephone;
+    private String photoProfil;
     private LocalDate dateNaissance;
     private Role role;
     private Boolean actif;
@@ -57,6 +58,10 @@ public class UtilisateurDTO {
     public void setTelephone(String telephone) {
         this.telephone = telephone;
     }
+
+    public String getPhotoProfil() { return photoProfil; }
+
+    public void setPhotoProfil(String photoProfil) { this.photoProfil = photoProfil; }
 
     public LocalDate getDateNaissance() {
         return dateNaissance;

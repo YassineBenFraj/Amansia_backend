@@ -152,6 +152,7 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         dto.setPrenom(utilisateur.getPrenom());
         dto.setEmail(utilisateur.getEmail());
         dto.setTelephone(utilisateur.getTelephone());
+        dto.setPhotoProfil(utilisateur.getPhotoProfil());
         dto.setDateNaissance(utilisateur.getDateNaissance());
         dto.setRole(utilisateur.getRole());
         dto.setActif(utilisateur.getActif());
