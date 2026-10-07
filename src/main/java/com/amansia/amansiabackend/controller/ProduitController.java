@@ -2,6 +2,7 @@ package com.amansia.amansiabackend.controller;
 
 import com.amansia.amansiabackend.dto.produit.ProduitCreationDTO;
 import com.amansia.amansiabackend.dto.produit.ProduitDTO;
+import com.amansia.amansiabackend.dto.produit.BornesPrixCatalogueDTO;
 import com.amansia.amansiabackend.dto.produit.ProduitUpdateDTO;
 import com.amansia.amansiabackend.service.ProduitService;
 import jakarta.validation.Valid;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/produits")
@@ -35,8 +37,17 @@ public class ProduitController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProduitDTO>> recupererProduitsActifs() {
-        return ResponseEntity.ok(cataloguePublicService.produits());
+    public ResponseEntity<List<ProduitDTO>> recupererProduitsActifs(
+            @RequestParam(required = false) String nom,
+            @RequestParam(required = false) Integer categorie,
+            @RequestParam(required = false) BigDecimal prixMin,
+            @RequestParam(required = false) BigDecimal prixMax) {
+        return ResponseEntity.ok(cataloguePublicService.catalogue(nom, categorie, prixMin, prixMax));
+    }
+
+    @GetMapping("/bornes-prix")
+    public ResponseEntity<BornesPrixCatalogueDTO> bornesPrixCatalogue() {
+        return ResponseEntity.ok(cataloguePublicService.bornesPrix());
     }
 
     @GetMapping("/admin")

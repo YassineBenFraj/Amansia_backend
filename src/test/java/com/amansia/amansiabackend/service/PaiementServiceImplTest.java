@@ -2,6 +2,13 @@ package com.amansia.amansiabackend.service;
 
 import com.amansia.amansiabackend.dto.paiement.PaiementCreationDTO;
 import com.amansia.amansiabackend.dto.paiement.PaiementDTO;
+import com.amansia.amansiabackend.dto.CodePromoQuote;
+import com.amansia.amansiabackend.dto.panier.PanierDTO;
+import com.amansia.amansiabackend.dto.panier.LignePanierDTO;
+import com.amansia.amansiabackend.dto.variante.VarianteProduitDTO;
+import com.amansia.amansiabackend.dto.commande.CommandeCreationDTO;
+import com.amansia.amansiabackend.dto.commande.CommandeDTO;
+import com.amansia.amansiabackend.dto.commande.LigneCommandeDTO;
 import com.amansia.amansiabackend.entity.Commande;
 import com.amansia.amansiabackend.entity.MethodePaiement;
 import com.amansia.amansiabackend.entity.StatutCommande;
@@ -39,6 +46,10 @@ class PaiementServiceImplTest {
     private StripePaymentService stripePaymentService;
     @Mock private PanierCommandeService panierCommandeService;
     @Mock private NotificationService notifications;
+    @Mock private PanierService panierService;
+    @Mock private StockService stockService;
+    @Mock private CodePromoService codes;
+    @Mock private CommandeService commandeService;
 
     @InjectMocks
     private PaiementServiceImpl paiementService;
@@ -96,6 +107,49 @@ class PaiementServiceImplTest {
 
         assertEquals("pi_secret_test", paiement.getClientSecret());
         assertEquals(StatutPaiement.EN_ATTENTE, paiement.getStatut());
+    }
+
+    @Test
+    void stripePreparationUsesServerCouponTotal() {
+        Utilisateur user = utilisateur(1);
+        PanierDTO cart = new PanierDTO();
+        cart.setTotalGeneral(new BigDecimal("1200.000"));
+        LignePanierDTO line = new LignePanierDTO(); line.setQuantite(1);
+        VarianteProduitDTO variant = new VarianteProduitDTO(); variant.setId(5); line.setVariante(variant);
+        cart.setLignes(List.of(line));
+        when(panierService.obtenirPanier(user)).thenReturn(cart);
+        when(codes.quote("AMANSIA10", 1, new BigDecimal("1200.000")))
+                .thenReturn(new CodePromoQuote(3, "AMANSIA10", new BigDecimal("1200.000"), new BigDecimal("120.000"), new BigDecimal("1080.000")));
+        when(stripePaymentService.preparerAutorisation(org.mockito.ArgumentMatchers.eq(new BigDecimal("1080.000")),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.eq(1))).thenReturn("secret");
+
+        var prepared = paiementService.preparerPaiementCarte(user, "AMANSIA10");
+
+        assertEquals(new BigDecimal("1080.000"), prepared.total());
+        assertEquals("secret", prepared.clientSecret());
+        verify(stockService).verifier(5, 1);
+    }
+
+    @Test
+    void fullyDiscountedOrderIsConfirmedWithoutStripe() {
+        Utilisateur user = utilisateur(1);
+        PanierDTO cart = new PanierDTO(); cart.setTotalGeneral(new BigDecimal("40.000"));
+        cart.setLignes(List.of(new LignePanierDTO()));
+        CommandeCreationDTO request = new CommandeCreationDTO(); request.setAdresseLivraisonId(2); request.setCodePromo("BIENVENUE50");
+        CommandeDTO created = new CommandeDTO(); created.setId(9);
+        LigneCommandeDTO line = new LigneCommandeDTO(); line.setVarianteId(5); line.setQuantite(1); created.setLignes(List.of(line));
+        Commande order = commande(9, user); order.setTotal(BigDecimal.ZERO); order.setRemise(new BigDecimal("40.000")); order.setNumeroCommande("CMD-9");
+        when(panierService.obtenirPanier(user)).thenReturn(cart);
+        when(codes.lockedQuote("BIENVENUE50", 1, new BigDecimal("40.000")))
+                .thenReturn(new CodePromoQuote(3, "BIENVENUE50", new BigDecimal("40.000"), new BigDecimal("40.000"), BigDecimal.ZERO));
+        when(commandeService.creerCommande(user, request)).thenReturn(created);
+        when(commandeRepository.findByIdForUpdate(9)).thenReturn(Optional.of(order));
+        when(commandeService.recupererCommandeParId(user, 9)).thenReturn(created);
+
+        assertEquals(9, paiementService.finaliserCommandeOfferte(user, request).getId());
+        verify(stockService).vendre(5, 1, order.getNumeroCommande());
+        verify(codes).consume(order, 1, new BigDecimal("40.000"));
+        org.mockito.Mockito.verifyNoInteractions(stripePaymentService);
     }
 
     private Utilisateur utilisateur(Integer id) {

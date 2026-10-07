@@ -5,6 +5,7 @@ import com.amansia.amansiabackend.dto.paiement.PaiementDTO;
 import com.amansia.amansiabackend.dto.paiement.StripePreparationDTO;
 import com.amansia.amansiabackend.dto.paiement.StripeFinalisationDTO;
 import com.amansia.amansiabackend.dto.commande.CommandeCreationDTO;
+import com.amansia.amansiabackend.dto.commande.CommandeDTO;
 import com.amansia.amansiabackend.entity.Commande;
 import com.amansia.amansiabackend.entity.Paiement;
 import com.amansia.amansiabackend.entity.StatutCommande;
@@ -40,6 +41,7 @@ public class PaiementServiceImpl implements PaiementService {
     private final CommandeService commandeService;
     private final StockService stockService;
     private final NotificationService notifications;
+    private final CodePromoService codes;
 
     @Override
     @Transactional(readOnly = true)
@@ -139,15 +141,17 @@ public class PaiementServiceImpl implements PaiementService {
     }
 
     @Override
-    public StripePreparationDTO preparerPaiementCarte(Utilisateur utilisateur) {
+    public StripePreparationDTO preparerPaiementCarte(Utilisateur utilisateur, String codePromo) {
         var panier = panierService.obtenirPanier(utilisateur);
         if (panier.getLignes() == null || panier.getLignes().isEmpty() || panier.getTotalGeneral() == null || panier.getTotalGeneral().signum() <= 0) {
             throw new IllegalArgumentException("Le panier est vide");
         }
         for (var ligne : panier.getLignes()) stockService.verifier(ligne.getVariante() == null ? null : ligne.getVariante().getId(), ligne.getQuantite());
+        var quote = codes.quote(codePromo, utilisateur.getId(), panier.getTotalGeneral());
+        if (quote.total().signum() <= 0) throw new IllegalArgumentException("Cette commande est entièrement offerte : aucun paiement Stripe n'est nécessaire.");
         String reference = genererReference();
-        String secret = stripePaymentService.preparerAutorisation(panier.getTotalGeneral(), reference, utilisateur.getId());
-        return new StripePreparationDTO(secret, stripePaymentService.getPublishableKey());
+        String secret = stripePaymentService.preparerAutorisation(quote.total(), reference, utilisateur.getId());
+        return new StripePreparationDTO(secret, stripePaymentService.getPublishableKey(), quote.sousTotal(), quote.reduction(), quote.total(), quote.code());
     }
 
     @Override
@@ -158,22 +162,45 @@ public class PaiementServiceImpl implements PaiementService {
             return convertirEnDTO(existant);
         }
         var panier = panierService.obtenirPanier(utilisateur);
-        stripePaymentService.verifierPreparation(dto.getPaymentIntentId(), utilisateur.getId(), panier.getTotalGeneral());
+        var quote = codes.lockedQuote(dto.getCodePromo(), utilisateur.getId(), panier.getTotalGeneral());
+        if (quote.total().signum() <= 0) throw new IllegalArgumentException("Le montant à payer doit être positif.");
+        stripePaymentService.verifierPreparation(dto.getPaymentIntentId(), utilisateur.getId(), quote.total());
         CommandeCreationDTO creation = new CommandeCreationDTO();
-        creation.setAdresseLivraisonId(dto.getAdresseLivraisonId()); creation.setCommentaire(dto.getCommentaire());
+        creation.setAdresseLivraisonId(dto.getAdresseLivraisonId()); creation.setCommentaire(dto.getCommentaire()); creation.setCodePromo(quote.code());
         var commandeDto = commandeService.creerCommande(utilisateur, creation);
         Commande commande = commandeRepository.findByIdForUpdate(commandeDto.getId()).orElseThrow();
+        if (commande.getTotal().compareTo(quote.total()) != 0) throw new IllegalArgumentException("Le prix a changé. Veuillez recommencer le paiement.");
         commande.setStatut(StatutCommande.CONFIRMEE); commandeRepository.save(commande);
         for (var ligne : commandeDto.getLignes()) stockService.vendre(ligne.getVarianteId(), ligne.getQuantite(), commande.getNumeroCommande());
         Paiement paiement = new Paiement(); paiement.setCommande(commande); paiement.setMontant(commande.getTotal());
         paiement.setMethode(com.amansia.amansiabackend.entity.MethodePaiement.CARTE); paiement.setStatut(StatutPaiement.EN_ATTENTE);
         paiement.setReference(dto.getPaymentIntentId()); paiement.setDatePaiement(null);
         paiementRepository.saveAndFlush(paiement);
+        codes.consume(commande, utilisateur.getId(), commande.getRemise());
         stripePaymentService.capturerPreparation(dto.getPaymentIntentId());
         paiement.setStatut(StatutPaiement.PAYE); paiement.setDatePaiement(LocalDateTime.now());
         paiementRepository.save(paiement); panierCommandeService.retirerArticlesCommandes(commande);
         notifications.orderPaid(commande);
         return convertirEnDTO(paiement);
+    }
+
+    @Override
+    public CommandeDTO finaliserCommandeOfferte(Utilisateur utilisateur, CommandeCreationDTO dto) {
+        var panier = panierService.obtenirPanier(utilisateur);
+        if (panier.getLignes() == null || panier.getLignes().isEmpty()) throw new IllegalArgumentException("Le panier est vide.");
+        var quote = codes.lockedQuote(dto.getCodePromo(), utilisateur.getId(), panier.getTotalGeneral());
+        if (quote.total().signum() != 0) throw new IllegalArgumentException("Cette commande nécessite un paiement par carte.");
+        dto.setCodePromo(quote.code());
+        CommandeDTO created = commandeService.creerCommande(utilisateur, dto);
+        Commande order = commandeRepository.findByIdForUpdate(created.getId()).orElseThrow();
+        if (order.getTotal().signum() != 0) throw new IllegalArgumentException("Le prix a changé. Veuillez réessayer.");
+        for (var line : created.getLignes()) stockService.vendre(line.getVarianteId(), line.getQuantite(), order.getNumeroCommande());
+        codes.consume(order, utilisateur.getId(), order.getRemise());
+        order.setStatut(StatutCommande.CONFIRMEE);
+        commandeRepository.save(order);
+        panierCommandeService.retirerArticlesCommandes(order);
+        notifications.orderFree(order);
+        return commandeService.recupererCommandeParId(utilisateur, order.getId());
     }
 
     private String genererReference() {

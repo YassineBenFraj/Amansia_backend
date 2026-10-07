@@ -75,7 +75,7 @@ public class FavoriService {
                         .thenComparing(ImageProduit::getOrdre))
                 .map(ImageProduit::getUrl).orElse(null);
         return new FavoriDTO(favori.getId(), produit.getId(), produit.getNom(),
-                produit.getPrix(), produit.getPrixPromotion(), image,
+                produit.getPrix(), PrixProduit.promotionApplicable(produit) ? produit.getPrixPromotion() : null, image,
                 CataloguePublicService.visible(produit), favori.getDateCreation());
     }
 }

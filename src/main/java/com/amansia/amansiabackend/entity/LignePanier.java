@@ -35,7 +35,7 @@ public class LignePanier {
     @Column(name = "quantite", nullable = false)
     private Integer quantite;
 
-    @Column(name = "prix_unitaire", nullable = false, precision = 12, scale = 2)
+    @Column(name = "prix_unitaire", nullable = false, precision = 12, scale = 3)
     private BigDecimal prixUnitaire;
 
     public Integer getId() {

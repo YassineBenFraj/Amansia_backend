@@ -42,16 +42,25 @@ public class Commande {
     @Column(name = "statut", nullable = false, length = 50)
     private StatutCommande statut;
 
-    @Column(name = "sous_total", nullable = false, precision = 12, scale = 2)
+    @Column(name = "sous_total", nullable = false, precision = 12, scale = 3)
     private BigDecimal sousTotal;
 
-    @Column(name = "frais_livraison", nullable = false, precision = 12, scale = 2)
+    @Column(name = "frais_livraison", nullable = false, precision = 12, scale = 3)
     private BigDecimal fraisLivraison;
 
-    @Column(name = "remise", nullable = false, precision = 12, scale = 2)
+    @Column(name = "remise", nullable = false, precision = 12, scale = 3)
     private BigDecimal remise;
 
-    @Column(name = "total", nullable = false, precision = 12, scale = 2)
+    @Column(name = "remise_produits", nullable = false, precision = 12, scale = 3)
+    private BigDecimal remiseProduits = BigDecimal.ZERO;
+
+    @Column(name = "code_promo_id")
+    private Integer codePromoId;
+
+    @Column(name = "code_promo", length = 40)
+    private String codePromo;
+
+    @Column(name = "total", nullable = false, precision = 12, scale = 3)
     private BigDecimal total;
 
     @Column(name = "commentaire", columnDefinition = "TEXT")
@@ -149,6 +158,13 @@ public class Commande {
     public void setRemise(BigDecimal remise) {
         this.remise = remise;
     }
+
+    public BigDecimal getRemiseProduits() { return remiseProduits; }
+    public void setRemiseProduits(BigDecimal remiseProduits) { this.remiseProduits = remiseProduits; }
+    public Integer getCodePromoId() { return codePromoId; }
+    public void setCodePromoId(Integer codePromoId) { this.codePromoId = codePromoId; }
+    public String getCodePromo() { return codePromo; }
+    public void setCodePromo(String codePromo) { this.codePromo = codePromo; }
 
     public BigDecimal getTotal() {
         return total;

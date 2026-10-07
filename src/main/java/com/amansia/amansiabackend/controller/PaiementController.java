@@ -3,6 +3,8 @@ package com.amansia.amansiabackend.controller;
 import com.amansia.amansiabackend.dto.paiement.PaiementDTO;
 import com.amansia.amansiabackend.dto.paiement.StripePreparationDTO;
 import com.amansia.amansiabackend.dto.paiement.StripeFinalisationDTO;
+import com.amansia.amansiabackend.dto.commande.CommandeCreationDTO;
+import com.amansia.amansiabackend.dto.commande.CommandeDTO;
 import com.amansia.amansiabackend.entity.Utilisateur;
 import com.amansia.amansiabackend.exception.UtilisateurNotFoundException;
 import com.amansia.amansiabackend.repository.UtilisateurRepository;
@@ -36,13 +38,18 @@ public class PaiementController {
     }
 
     @PostMapping("/stripe/preparer")
-    public ResponseEntity<StripePreparationDTO> preparer(Authentication authentication) {
-        return ResponseEntity.ok(paiementService.preparerPaiementCarte(recupererUtilisateurConnecte(authentication)));
+    public ResponseEntity<StripePreparationDTO> preparer(Authentication authentication, @RequestBody(required = false) java.util.Map<String,String> body) {
+        return ResponseEntity.ok(paiementService.preparerPaiementCarte(recupererUtilisateurConnecte(authentication), body == null ? null : body.get("codePromo")));
     }
 
     @PostMapping("/stripe/finaliser")
     public ResponseEntity<PaiementDTO> finaliser(Authentication authentication, @Valid @RequestBody StripeFinalisationDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paiementService.finaliserPaiementCarte(recupererUtilisateurConnecte(authentication), dto));
+    }
+
+    @PostMapping("/commande-offerte")
+    public ResponseEntity<CommandeDTO> commandeOfferte(Authentication authentication, @Valid @RequestBody CommandeCreationDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(paiementService.finaliserCommandeOfferte(recupererUtilisateurConnecte(authentication), dto));
     }
 
     @PostMapping("/webhook")

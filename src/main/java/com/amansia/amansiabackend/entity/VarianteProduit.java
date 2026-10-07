@@ -44,7 +44,7 @@ public class VarianteProduit {
     @Column(name = "reference", nullable = false, unique = true, length = 100)
     private String reference;
 
-    @Column(name = "prix_supplementaire", precision = 12, scale = 2)
+    @Column(name = "prix_supplementaire", precision = 12, scale = 3)
     private BigDecimal prixSupplementaire;
 
     @Column(name = "actif", nullable = false)

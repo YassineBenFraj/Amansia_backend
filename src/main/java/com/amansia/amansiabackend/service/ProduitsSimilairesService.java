@@ -28,14 +28,14 @@ public class ProduitsSimilairesService {
 
     public List<ProduitSimilaireDTO> similaires(Integer produitId) {
         List<Candidat> source = jdbc.query(
-            "SELECT p.id,p.categorie_id,COALESCE(p.prix_promotion,p.prix) prix " +
+            "SELECT p.id,p.categorie_id,CASE WHEN p.promotion_active=1 AND p.prix_promotion>=0 AND p.prix_promotion<p.prix AND (p.promotion_date_debut IS NULL OR p.promotion_date_debut<=NOW()) AND (p.promotion_date_fin IS NULL OR p.promotion_date_fin>=NOW()) THEN p.prix_promotion ELSE p.prix END prix " +
             "FROM produits p JOIN categories c ON c.id=p.categorie_id " +
             "WHERE p.id=? AND p.actif=1 AND c.actif=1",
             (rs, row) -> new Candidat(rs.getInt("id"),rs.getInt("categorie_id"),rs.getBigDecimal("prix")), produitId);
         if (source.isEmpty()) throw new ProduitNotFoundException(produitId);
         Candidat cible = source.get(0);
         List<Candidat> candidats = jdbc.query(
-            "SELECT p.id,p.categorie_id,COALESCE(p.prix_promotion,p.prix) prix " +
+            "SELECT p.id,p.categorie_id,CASE WHEN p.promotion_active=1 AND p.prix_promotion>=0 AND p.prix_promotion<p.prix AND (p.promotion_date_debut IS NULL OR p.promotion_date_debut<=NOW()) AND (p.promotion_date_fin IS NULL OR p.promotion_date_fin>=NOW()) THEN p.prix_promotion ELSE p.prix END prix " +
             "FROM produits p JOIN categories c ON c.id=p.categorie_id " +
             "WHERE p.id<>? AND p.actif=1 AND c.actif=1",
             (rs, row) -> new Candidat(rs.getInt("id"),rs.getInt("categorie_id"),rs.getBigDecimal("prix")), produitId);

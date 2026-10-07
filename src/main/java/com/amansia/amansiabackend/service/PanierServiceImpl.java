@@ -174,6 +174,14 @@ public class PanierServiceImpl implements PanierService {
                 .map(LignePanierDTO::getPrixTotal)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
+        BigDecimal before = lignes.stream().map(ligne -> {
+            BigDecimal normal = ligne.getProduit().getPrix();
+            if (ligne.getVariante() != null && ligne.getVariante().getPrixSupplementaire() != null)
+                normal = normal.add(ligne.getVariante().getPrixSupplementaire());
+            return normal.multiply(BigDecimal.valueOf(ligne.getQuantite()));
+        }).reduce(BigDecimal.ZERO, BigDecimal::add);
+        dto.setSousTotalAvantPromotion(before);
+        dto.setRemiseProduits(before.subtract(dto.getTotalGeneral()));
         return dto;
     }
 
@@ -181,7 +189,8 @@ public class PanierServiceImpl implements PanierService {
         LignePanierDTO dto = new LignePanierDTO();
         dto.setId(ligne.getId());
         dto.setQuantite(ligne.getQuantite());
-        dto.setPrixUnitaire(ligne.getPrixUnitaire());
+        BigDecimal prixActuel = PrixProduit.calculer(ligne.getProduit(), ligne.getVariante());
+        dto.setPrixUnitaire(prixActuel);
 
         Produit produit = ligne.getProduit();
         ProduitDTO produitDTO = new ProduitDTO();
@@ -201,7 +210,7 @@ public class PanierServiceImpl implements PanierService {
             dto.setVariante(varianteDTO);
         }
 
-        BigDecimal prixTotal = ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(ligne.getQuantite()));
+        BigDecimal prixTotal = prixActuel.multiply(BigDecimal.valueOf(ligne.getQuantite()));
         dto.setPrixTotal(prixTotal);
         return dto;
     }

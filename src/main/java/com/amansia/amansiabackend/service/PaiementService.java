@@ -5,6 +5,8 @@ import com.amansia.amansiabackend.dto.paiement.PaiementDTO;
 import com.amansia.amansiabackend.entity.Utilisateur;
 import com.amansia.amansiabackend.dto.paiement.StripePreparationDTO;
 import com.amansia.amansiabackend.dto.paiement.StripeFinalisationDTO;
+import com.amansia.amansiabackend.dto.commande.CommandeCreationDTO;
+import com.amansia.amansiabackend.dto.commande.CommandeDTO;
 
 import java.util.List;
 
@@ -19,6 +21,7 @@ public interface PaiementService {
     PaiementDTO verifierPaiementCarte(Utilisateur utilisateur, Integer paiementId, String paymentIntentId);
 
     void traiterWebhookStripe(String payload, String signature);
-    StripePreparationDTO preparerPaiementCarte(Utilisateur utilisateur);
+    StripePreparationDTO preparerPaiementCarte(Utilisateur utilisateur, String codePromo);
     PaiementDTO finaliserPaiementCarte(Utilisateur utilisateur, StripeFinalisationDTO dto);
+    CommandeDTO finaliserCommandeOfferte(Utilisateur utilisateur, CommandeCreationDTO dto);
 }

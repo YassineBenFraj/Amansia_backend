@@ -3,6 +3,7 @@ package com.amansia.amansiabackend.service;
 import com.amansia.amansiabackend.dto.commande.CommandeCreationDTO;
 import com.amansia.amansiabackend.dto.commande.CommandeDTO;
 import com.amansia.amansiabackend.dto.commande.LigneCommandeDTO;
+import com.amansia.amansiabackend.dto.CodePromoQuote;
 import com.amansia.amansiabackend.entity.Commande;
 import com.amansia.amansiabackend.entity.LigneCommande;
 import com.amansia.amansiabackend.entity.LignePanier;
@@ -50,6 +51,7 @@ public class CommandeServiceImpl implements CommandeService {
     private final com.amansia.amansiabackend.repository.PaiementRepository paiementRepository;
     private final com.amansia.amansiabackend.repository.AdresseRepository adresseRepository;
     private final NotificationService notifications;
+    private final CodePromoService codes;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,6 +80,7 @@ public class CommandeServiceImpl implements CommandeService {
 
         List<LigneCommande> lignesCommande = new ArrayList<>();
         BigDecimal sousTotal = BigDecimal.ZERO;
+        BigDecimal remiseProduits = BigDecimal.ZERO;
 
         for (LignePanier lignePanier : lignesPanier) {
             Produit produit = produitRepository.findById(lignePanier.getProduit().getId())
@@ -105,28 +108,36 @@ public class CommandeServiceImpl implements CommandeService {
             stockService.verifier(variante == null ? null : variante.getId(), lignePanier.getQuantite());
             BigDecimal prixLigne = prixUnitaire.multiply(BigDecimal.valueOf(lignePanier.getQuantite()));
             sousTotal = sousTotal.add(prixLigne);
+            if (PrixProduit.promotionApplicable(produit)) {
+                remiseProduits = remiseProduits.add(produit.getPrix().subtract(produit.getPrixPromotion())
+                        .multiply(BigDecimal.valueOf(lignePanier.getQuantite())));
+            }
 
             LigneCommande ligneCommande = new LigneCommande();
             ligneCommande.setCommande(null);
             ligneCommande.setProduit(produit);
             ligneCommande.setVariante(variante);
             ligneCommande.setQuantite(lignePanier.getQuantite());
-            ligneCommande.setPrixUnitaire(prixUnitaire.setScale(2, RoundingMode.HALF_UP));
-            ligneCommande.setPrixTotal(prixLigne.setScale(2, RoundingMode.HALF_UP));
+            ligneCommande.setPrixUnitaire(prixUnitaire.setScale(3, RoundingMode.HALF_UP));
+            ligneCommande.setPrixTotal(prixLigne.setScale(3, RoundingMode.HALF_UP));
             lignesCommande.add(ligneCommande);
         }
 
-        BigDecimal remise = BigDecimal.ZERO;
-        BigDecimal total = sousTotal.subtract(remise).setScale(2, RoundingMode.HALF_UP);
+        CodePromoQuote quote = codes.quote(creationDTO.getCodePromo(), utilisateur.getId(), sousTotal);
+        BigDecimal remise = quote.reduction();
+        BigDecimal total = sousTotal.subtract(remise).setScale(3, RoundingMode.HALF_UP);
 
         Commande commande = new Commande();
         commande.setUtilisateur(utilisateur);
         commande.setAdresseLivraisonId(creationDTO.getAdresseLivraisonId());
         commande.setNumeroCommande(genererNumeroCommande());
         commande.setStatut(StatutCommande.EN_ATTENTE);
-        commande.setSousTotal(sousTotal.setScale(2, RoundingMode.HALF_UP));
-        commande.setFraisLivraison(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
-        commande.setRemise(remise.setScale(2, RoundingMode.HALF_UP));
+        commande.setSousTotal(sousTotal.setScale(3, RoundingMode.HALF_UP));
+        commande.setFraisLivraison(BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP));
+        commande.setRemise(remise.setScale(3, RoundingMode.HALF_UP));
+        commande.setRemiseProduits(remiseProduits.setScale(3, RoundingMode.HALF_UP));
+        commande.setCodePromo(quote.code());
+        commande.setCodePromoId(quote.codePromoId());
         commande.setTotal(total);
         commande.setCommentaire(creationDTO.getCommentaire());
         commandeRepository.save(commande);
@@ -241,7 +252,10 @@ public class CommandeServiceImpl implements CommandeService {
         dto.setDateCommande(commande.getDateCommande());
         dto.setStatut(commande.getStatut());
         dto.setSousTotal(commande.getSousTotal());
+        dto.setSousTotalAvantPromotion(commande.getSousTotal() == null ? null : commande.getSousTotal().add(commande.getRemiseProduits() == null ? BigDecimal.ZERO : commande.getRemiseProduits()));
         dto.setRemise(commande.getRemise());
+        dto.setRemiseProduits(commande.getRemiseProduits());
+        dto.setCodePromo(commande.getCodePromo());
         dto.setTotal(commande.getTotal());
         dto.setCommentaire(commande.getCommentaire());
 

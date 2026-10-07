@@ -45,6 +45,16 @@ public class NotificationService {
         admins(TypeNotification.NOUVELLE_COMMANDE, "Nouvelle commande", "Une nouvelle commande payée #" + number + " vient d'être enregistrée.", "/admin/commandes/" + id, "new-order:" + id);
     }
 
+    public void orderFree(Commande order) {
+        Integer id = order.getId();
+        create(order.getUtilisateur().getId(), TypeNotification.COMMANDE_CONFIRMEE,
+                "Commande confirmée", "Votre commande #" + order.getNumeroCommande() + " a été confirmée sans montant à payer.",
+                "/mes-commandes/" + id, "confirmed:" + id);
+        admins(TypeNotification.NOUVELLE_COMMANDE, "Nouvelle commande",
+                "Une nouvelle commande offerte #" + order.getNumeroCommande() + " vient d'être enregistrée.",
+                "/admin/commandes/" + id, "new-order:" + id);
+    }
+
     public void orderStatus(Commande order) {
         String detail = switch (order.getStatut()) {
             case EN_PREPARATION -> "est maintenant en préparation";

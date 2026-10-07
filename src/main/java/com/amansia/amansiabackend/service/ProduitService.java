@@ -5,6 +5,7 @@ import com.amansia.amansiabackend.dto.produit.ProduitDTO;
 import com.amansia.amansiabackend.dto.produit.ProduitUpdateDTO;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 public interface ProduitService {
 
@@ -21,6 +22,8 @@ public interface ProduitService {
     List<ProduitDTO> recupererProduitsActifsParCategorie(Integer categorieId);
 
     List<ProduitDTO> rechercherParNom(String nom);
+
+    List<ProduitDTO> rechercherCatalogue(String nom, Integer categorieId, BigDecimal prixMin, BigDecimal prixMax);
 
     ProduitDTO modifierProduit(Integer id, ProduitUpdateDTO updateDTO);
 

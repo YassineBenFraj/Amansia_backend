@@ -22,8 +22,11 @@ public class CommandeDTO {
     private LocalDateTime dateCommande;
     private StatutCommande statut;
     private BigDecimal sousTotal;
+    private BigDecimal sousTotalAvantPromotion;
     private BigDecimal fraisLivraison;
     private BigDecimal remise;
+    private BigDecimal remiseProduits;
+    private String codePromo;
     private BigDecimal total;
     private String commentaire;
     private List<LigneCommandeDTO> lignes;
@@ -90,6 +93,8 @@ public class CommandeDTO {
     public void setSousTotal(BigDecimal sousTotal) {
         this.sousTotal = sousTotal;
     }
+    public BigDecimal getSousTotalAvantPromotion() { return sousTotalAvantPromotion; }
+    public void setSousTotalAvantPromotion(BigDecimal value) { sousTotalAvantPromotion = value; }
 
     public BigDecimal getFraisLivraison() {
         return fraisLivraison;
@@ -106,6 +111,10 @@ public class CommandeDTO {
     public void setRemise(BigDecimal remise) {
         this.remise = remise;
     }
+    public BigDecimal getRemiseProduits() { return remiseProduits; }
+    public void setRemiseProduits(BigDecimal remiseProduits) { this.remiseProduits = remiseProduits; }
+    public String getCodePromo() { return codePromo; }
+    public void setCodePromo(String codePromo) { this.codePromo = codePromo; }
 
     public BigDecimal getTotal() {
         return total;

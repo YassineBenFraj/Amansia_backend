@@ -87,10 +87,24 @@ public class ProduitServiceImpl implements ProduitService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ProduitDTO> rechercherCatalogue(String nom, Integer categorieId, BigDecimal prixMin, BigDecimal prixMax) {
+        String recherche = nom == null || nom.isBlank() ? null : nom.trim();
+        if (prixMin != null && prixMin.signum() < 0 || prixMax != null && prixMax.signum() < 0) {
+            throw new IllegalArgumentException("Les prix doivent être positifs ou nuls.");
+        }
+        if (prixMin != null && prixMax != null && prixMin.compareTo(prixMax) > 0) {
+            throw new IllegalArgumentException("Le prix minimum ne peut pas dépasser le prix maximum.");
+        }
+        return produitRepository.rechercherCatalogue(recherche, categorieId, prixMin, prixMax).stream()
+                .map(this::convertirEnDTO).toList();
+    }
+
+    @Override
     public ProduitDTO modifierProduit(Integer id, ProduitUpdateDTO updateDTO) {
         Produit produit = trouverProduit(id);
         Categorie categorie = trouverCategorieActive(updateDTO.getCategorieId());
-        verifierPrixPromotion(updateDTO.getPrix(), updateDTO.getPrixPromotion());
+        verifierPrixPromotion(updateDTO.getPrix(), updateDTO.getPrixPromotion() != null ? updateDTO.getPrixPromotion() : produit.getPrixPromotion());
 
         appliquerChamps(produit, updateDTO, categorie);
         if (updateDTO.getActif() != null) {
@@ -125,7 +139,7 @@ public class ProduitServiceImpl implements ProduitService {
     }
 
     private void verifierPrixPromotion(BigDecimal prix, BigDecimal prixPromotion) {
-        if (prixPromotion != null && prixPromotion.compareTo(prix) > 0) {
+        if (prixPromotion != null && (prixPromotion.signum() < 0 || prixPromotion.compareTo(prix) >= 0)) {
             throw new PrixPromotionInvalideException();
         }
     }
@@ -135,7 +149,7 @@ public class ProduitServiceImpl implements ProduitService {
         produit.setNom(dto.getNom().trim());
         produit.setDescription(dto.getDescription());
         produit.setPrix(dto.getPrix());
-        produit.setPrixPromotion(dto.getPrixPromotion());
+        if (dto.getPrixPromotion() != null) produit.setPrixPromotion(dto.getPrixPromotion());
         produit.setMarque(dto.getMarque());
         produit.setLargeur(dto.getLargeur());
         produit.setHauteur(dto.getHauteur());
@@ -149,7 +163,7 @@ public class ProduitServiceImpl implements ProduitService {
         produit.setNom(dto.getNom().trim());
         produit.setDescription(dto.getDescription());
         produit.setPrix(dto.getPrix());
-        produit.setPrixPromotion(dto.getPrixPromotion());
+        if (dto.getPrixPromotion() != null) produit.setPrixPromotion(dto.getPrixPromotion());
         produit.setMarque(dto.getMarque());
         produit.setLargeur(dto.getLargeur());
         produit.setHauteur(dto.getHauteur());
@@ -168,7 +182,7 @@ public class ProduitServiceImpl implements ProduitService {
         dto.setNom(produit.getNom());
         dto.setDescription(produit.getDescription());
         dto.setPrix(produit.getPrix());
-        dto.setPrixPromotion(produit.getPrixPromotion());
+        dto.setPrixPromotion(PrixProduit.promotionApplicable(produit) ? produit.getPrixPromotion() : null);
         dto.setMarque(produit.getMarque());
         dto.setLargeur(produit.getLargeur());
         dto.setHauteur(produit.getHauteur());

@@ -57,8 +57,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/stocks/admin", "/api/stocks/admin/**").hasRole("ADMINISTRATEUR")
                         .requestMatchers("/api/adresses/**").authenticated()
                         .requestMatchers("/api/notifications", "/api/notifications/**").authenticated()
+                        .requestMatchers("/api/admin/promotions", "/api/admin/promotions/**", "/api/admin/codes-promo", "/api/admin/codes-promo/**").hasRole("ADMINISTRATEUR")
+                        .requestMatchers("/api/codes-promo/valider").hasRole("CLIENT")
                         .requestMatchers(HttpMethod.GET,
-                            "/api/categories/actives", "/api/produits", "/api/produits/recherche",
+                            "/api/categories/actives", "/api/produits", "/api/produits/recherche", "/api/produits/bornes-prix",
                             "/api/produits/{id:[0-9]+}", "/api/produits/{id:[0-9]+}/similaires", "/api/produits/categorie/{id}/actifs",
                             "/api/images-produits", "/api/images-produits/{id:[0-9]+}", "/api/images-produits/produit/{id}",
                             "/api/materiaux/actifs", "/api/couleurs/actives",

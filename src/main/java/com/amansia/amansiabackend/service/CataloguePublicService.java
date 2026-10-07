@@ -2,6 +2,7 @@ package com.amansia.amansiabackend.service;
 
 import com.amansia.amansiabackend.dto.image.ImageProduitDTO;
 import com.amansia.amansiabackend.dto.produit.ProduitDTO;
+import com.amansia.amansiabackend.dto.produit.BornesPrixCatalogueDTO;
 import com.amansia.amansiabackend.dto.variante.VarianteProduitDTO;
 import com.amansia.amansiabackend.entity.Produit;
 import com.amansia.amansiabackend.entity.VarianteProduit;
@@ -11,6 +12,7 @@ import com.amansia.amansiabackend.repository.ImageProduitRepository;
 import com.amansia.amansiabackend.repository.ProduitRepository;
 import com.amansia.amansiabackend.repository.VarianteProduitRepository;
 import java.util.List;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +54,18 @@ public class CataloguePublicService {
 
     public List<ProduitDTO> produits() {
         return filtrer(produitService.recupererProduitsActifs());
+    }
+
+    public List<ProduitDTO> catalogue(String nom, Integer categorieId, BigDecimal prixMin, BigDecimal prixMax) {
+        var disponibles = stockService.disponibiliteProduits();
+        return produitService.rechercherCatalogue(nom, categorieId, prixMin, prixMax).stream()
+                .peek(produit -> produit.setDisponible(disponibles.getOrDefault(produit.getId(), 0) > 0))
+                .toList();
+    }
+
+    public BornesPrixCatalogueDTO bornesPrix() {
+        var bornes = produits.bornesPrixCatalogue();
+        return new BornesPrixCatalogueDTO(bornes.getMinimum(), bornes.getMaximum());
     }
 
     public List<ProduitDTO> recherche(String nom) {

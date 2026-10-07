@@ -8,6 +8,8 @@ public class PanierDTO {
     private Integer id;
     private List<LignePanierDTO> lignes;
     private BigDecimal totalGeneral;
+    private BigDecimal sousTotalAvantPromotion;
+    private BigDecimal remiseProduits;
 
     public Integer getId() {
         return id;
@@ -32,4 +34,8 @@ public class PanierDTO {
     public void setTotalGeneral(BigDecimal totalGeneral) {
         this.totalGeneral = totalGeneral;
     }
+    public BigDecimal getSousTotalAvantPromotion() { return sousTotalAvantPromotion; }
+    public void setSousTotalAvantPromotion(BigDecimal value) { sousTotalAvantPromotion = value; }
+    public BigDecimal getRemiseProduits() { return remiseProduits; }
+    public void setRemiseProduits(BigDecimal value) { remiseProduits = value; }
 }

@@ -35,11 +35,20 @@ public class Produit {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "prix", nullable = false, precision = 10, scale = 2)
+    @Column(name = "prix", nullable = false, precision = 12, scale = 3)
     private BigDecimal prix;
 
-    @Column(name = "prix_promotion", precision = 10, scale = 2)
+    @Column(name = "prix_promotion", precision = 12, scale = 3)
     private BigDecimal prixPromotion;
+
+    @Column(name = "promotion_active", nullable = false)
+    private Boolean promotionActive = false;
+
+    @Column(name = "promotion_date_debut")
+    private LocalDateTime promotionDateDebut;
+
+    @Column(name = "promotion_date_fin")
+    private LocalDateTime promotionDateFin;
 
     @Column(name = "marque", length = 150)
     private String marque;
@@ -133,6 +142,13 @@ public class Produit {
     public void setPrixPromotion(BigDecimal prixPromotion) {
         this.prixPromotion = prixPromotion;
     }
+
+    public Boolean getPromotionActive() { return promotionActive; }
+    public void setPromotionActive(Boolean promotionActive) { this.promotionActive = promotionActive; }
+    public LocalDateTime getPromotionDateDebut() { return promotionDateDebut; }
+    public void setPromotionDateDebut(LocalDateTime promotionDateDebut) { this.promotionDateDebut = promotionDateDebut; }
+    public LocalDateTime getPromotionDateFin() { return promotionDateFin; }
+    public void setPromotionDateFin(LocalDateTime promotionDateFin) { this.promotionDateFin = promotionDateFin; }
 
     public String getMarque() {
         return marque;
