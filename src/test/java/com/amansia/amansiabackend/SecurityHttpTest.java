@@ -25,6 +25,7 @@ class SecurityHttpTest {
  @MockitoBean CategorieService categories;@MockitoBean MateriauService materiaux;@MockitoBean CouleurService couleurs;@MockitoBean AvisService avis;
  @MockitoBean CommandeService commandes;@MockitoBean PaiementService paiements;@MockitoBean StockService stock;@MockitoBean ProduitsSimilairesService similaires;
  @MockitoBean ProfileService profile;
+ @MockitoBean com.amansia.amansiabackend.auth.service.PasswordResetService passwordReset;
  @MockitoBean NotificationService notifications;
  MockMvc mvc;
  @BeforeEach void setup(){mvc=MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();}
@@ -39,6 +40,16 @@ class SecurityHttpTest {
   }
   mvc.perform(post("/api/codes-promo/valider").contentType("application/json").content("{\"code\":\"AMANSIA10\"}"))
    .andExpect(status().isUnauthorized());
+ }
+ @Test void passwordResetEndpointsArePublicWithoutOpeningAuthProfile() throws Exception {
+  mvc.perform(post("/api/auth/mot-de-passe-oublie").contentType("application/json")
+   .content("{\"email\":\"client@example.test\"}"))
+   .andExpect(status().isOk())
+   .andExpect(jsonPath("$.message").value(com.amansia.amansiabackend.auth.service.PasswordResetService.GENERIC_MESSAGE));
+  mvc.perform(post("/api/auth/reinitialiser-mot-de-passe").contentType("application/json")
+   .content("{\"token\":\"invalid\",\"nouveauMotDePasse\":\"nouveau123\",\"confirmationMotDePasse\":\"nouveau123\"}"))
+   .andExpect(status().isOk());
+  mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
  }
  @Test void administratorCanReadBothLists() throws Exception {String t=token("ADMINISTRATEUR",false);mvc.perform(get("/api/commandes/admin").header("Authorization",t)).andExpect(status().isOk());mvc.perform(get("/api/paiements/admin").header("Authorization",t)).andExpect(status().isOk());verify(commandes).recupererTousLesCommandes();verify(paiements).recupererTousLesPaiements();mvc.perform(get("/api/stocks/admin").header("Authorization",t)).andExpect(status().isOk());verify(stock).stocks();}
  @Test void clientCannotModifyStock() throws Exception {mvc.perform(post("/api/stocks/admin/mouvements").header("Authorization",token("CLIENT",false)).contentType("application/json").content("{\"varianteId\":1,\"typeMouvement\":\"ENTREE\",\"quantite\":1,\"motif\":\"test\"}")).andExpect(status().isForbidden());verifyNoInteractions(stock);}

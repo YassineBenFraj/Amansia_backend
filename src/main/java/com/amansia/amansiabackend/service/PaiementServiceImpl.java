@@ -41,6 +41,7 @@ public class PaiementServiceImpl implements PaiementService {
     private final CommandeService commandeService;
     private final StockService stockService;
     private final NotificationService notifications;
+    private final CommandeEmailService commandeEmails;
     private final CodePromoService codes;
 
     @Override
@@ -181,6 +182,7 @@ public class PaiementServiceImpl implements PaiementService {
         paiement.setStatut(StatutPaiement.PAYE); paiement.setDatePaiement(LocalDateTime.now());
         paiementRepository.save(paiement); panierCommandeService.retirerArticlesCommandes(commande);
         notifications.orderPaid(commande);
+        commandeEmails.paiementConfirme(commande, paiement);
         return convertirEnDTO(paiement);
     }
 
@@ -200,6 +202,7 @@ public class PaiementServiceImpl implements PaiementService {
         commandeRepository.save(order);
         panierCommandeService.retirerArticlesCommandes(order);
         notifications.orderFree(order);
+        commandeEmails.commandeOfferte(order);
         return commandeService.recupererCommandeParId(utilisateur, order.getId());
     }
 

@@ -14,6 +14,15 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(com.amansia.amansiabackend.auth.service.LienReinitialisationException.class)
+    public ResponseEntity<ErrorResponse> lienReinitialisation(com.amansia.amansiabackend.auth.service.LienReinitialisationException e) {
+        return response(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(com.amansia.amansiabackend.auth.service.EmailIndisponibleException.class)
+    public ResponseEntity<ErrorResponse> emailIndisponible(com.amansia.amansiabackend.auth.service.EmailIndisponibleException e) {
+        return response(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+    }
     @ExceptionHandler(AdresseNotFoundException.class)
     public ResponseEntity<ErrorResponse> adresseAbsente(AdresseNotFoundException e) { return response(HttpStatus.NOT_FOUND,e.getMessage()); }
     @ExceptionHandler(AdresseUtiliseeException.class)

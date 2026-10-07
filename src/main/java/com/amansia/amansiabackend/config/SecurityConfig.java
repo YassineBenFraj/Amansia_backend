@@ -50,7 +50,8 @@ public class SecurityConfig {
                     writeSecurityError(response, HttpServletResponse.SC_FORBIDDEN,
                         "Acces interdit")))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
+                                "/api/auth/mot-de-passe-oublie", "/api/auth/reinitialiser-mot-de-passe").permitAll()
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/commandes/admin", "/api/commandes/admin/**", "/api/paiements/admin", "/api/paiements/admin/**").hasRole("ADMINISTRATEUR")
                         .requestMatchers("/api/avis/admin").hasRole("ADMINISTRATEUR")

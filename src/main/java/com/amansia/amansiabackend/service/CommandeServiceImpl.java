@@ -51,6 +51,7 @@ public class CommandeServiceImpl implements CommandeService {
     private final com.amansia.amansiabackend.repository.PaiementRepository paiementRepository;
     private final com.amansia.amansiabackend.repository.AdresseRepository adresseRepository;
     private final NotificationService notifications;
+    private final CommandeEmailService commandeEmails;
     private final CodePromoService codes;
 
     @Override
@@ -224,6 +225,7 @@ public class CommandeServiceImpl implements CommandeService {
         commande.setStatut(statut);
         commandeRepository.save(commande);
         notifications.orderStatus(commande);
+        commandeEmails.statutModifie(commande);
         return convertirEnDTO(commande, ligneCommandeRepository.findByCommandeId(commandeId));
     }
 

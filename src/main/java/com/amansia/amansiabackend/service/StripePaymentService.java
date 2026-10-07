@@ -34,7 +34,8 @@ public class StripePaymentService {
  private final com.amansia.amansiabackend.repository.CommandeRepository commandeRepository;
  private final PanierCommandeService panierCommandeService;
  private final NotificationService notifications;
- public StripePaymentService(PaiementRepository p, com.amansia.amansiabackend.repository.CommandeRepository commandes, PanierCommandeService panierCommandeService, NotificationService notifications){ this.paiementRepository=p; this.commandeRepository=commandes; this.panierCommandeService=panierCommandeService; this.notifications=notifications; }
+ private final CommandeEmailService commandeEmails;
+ public StripePaymentService(PaiementRepository p, com.amansia.amansiabackend.repository.CommandeRepository commandes, PanierCommandeService panierCommandeService, NotificationService notifications, CommandeEmailService commandeEmails){ this.paiementRepository=p; this.commandeRepository=commandes; this.panierCommandeService=panierCommandeService; this.notifications=notifications; this.commandeEmails=commandeEmails; }
  public String creerCheckoutSession(Object ignored){ throw new UnsupportedOperationException("Stripe Checkout externe désactivé"); }
  @Value("${stripe.secret-key:}") private String secretKey;
  @Value("${stripe.publishable-key:}") private String publishableKey;
@@ -148,7 +149,7 @@ public class StripePaymentService {
   if(paiement.getStatut()==StatutPaiement.REMBOURSE || verrou.getStatut()!=StatutCommande.EN_ATTENTE) throw new IllegalArgumentException("Commande incompatible avec la confirmation du paiement");
   paiement.setStatut(StatutPaiement.PAYE); paiement.setDatePaiement(LocalDateTime.now()); paiementRepository.save(paiement);
   var commande=paiement.getCommande();
-  if(commande!=null&&commande.getStatut()==StatutCommande.EN_ATTENTE){commande.setStatut(StatutCommande.CONFIRMEE);commandeRepository.save(commande);panierCommandeService.retirerArticlesCommandes(commande);notifications.orderPaid(commande);}
+  if(commande!=null&&commande.getStatut()==StatutCommande.EN_ATTENTE){commande.setStatut(StatutCommande.CONFIRMEE);commandeRepository.save(commande);panierCommandeService.retirerArticlesCommandes(commande);notifications.orderPaid(commande);commandeEmails.paiementConfirme(commande,paiement);}
  }
  public String getPublishableKey(){
   if(publishableKey==null||publishableKey.isBlank()) throw new StripeConfigurationException("STRIPE_PUBLISHABLE_KEY non configurée");

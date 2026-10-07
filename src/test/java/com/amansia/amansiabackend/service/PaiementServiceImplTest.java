@@ -46,6 +46,7 @@ class PaiementServiceImplTest {
     private StripePaymentService stripePaymentService;
     @Mock private PanierCommandeService panierCommandeService;
     @Mock private NotificationService notifications;
+    @Mock private CommandeEmailService commandeEmails;
     @Mock private PanierService panierService;
     @Mock private StockService stockService;
     @Mock private CodePromoService codes;

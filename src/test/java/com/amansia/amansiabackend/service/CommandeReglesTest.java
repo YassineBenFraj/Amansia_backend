@@ -22,6 +22,7 @@ class CommandeReglesTest {
  @Mock AdresseService adresses; @Mock PaiementRepository paiements; @Mock AdresseRepository adresseRepository;
  @Mock StockService stockService;
  @Mock NotificationService notifications;
+ @Mock CommandeEmailService commandeEmails;
  @Mock CodePromoService codes;
  @InjectMocks CommandeServiceImpl service;
  Utilisateur utilisateur(){var u=new Utilisateur();u.setId(1);return u;}
