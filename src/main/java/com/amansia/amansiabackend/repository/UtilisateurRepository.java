@@ -17,6 +17,8 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Intege
 
     Optional<Utilisateur> findByEmail(String email);
 
+    Optional<Utilisateur> findByGoogleSub(String googleSub);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from Utilisateur u where u.email = :email")
     Optional<Utilisateur> findByEmailForUpdate(@Param("email") String email);

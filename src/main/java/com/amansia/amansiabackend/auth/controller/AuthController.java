@@ -3,6 +3,7 @@ package com.amansia.amansiabackend.auth.controller;
 import com.amansia.amansiabackend.auth.dto.AuthResponse;
 import com.amansia.amansiabackend.auth.dto.LoginRequest;
 import com.amansia.amansiabackend.auth.dto.RegisterRequest;
+import com.amansia.amansiabackend.auth.dto.GoogleLoginRequest;
 import com.amansia.amansiabackend.auth.dto.ForgotPasswordRequest;
 import com.amansia.amansiabackend.auth.dto.ResetPasswordRequest;
 import com.amansia.amansiabackend.auth.service.AuthService;
@@ -37,6 +38,16 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(authService.google(request.credential()));
+    }
+
+    @PostMapping("/google/link")
+    public ResponseEntity<UtilisateurDTO> associerGoogle(Authentication authentication, @Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(authService.associerGoogle(authentication.getName(), request.credential()));
     }
 
     @GetMapping("/me")

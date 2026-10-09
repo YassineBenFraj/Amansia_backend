@@ -24,6 +24,9 @@ public class Utilisateur {
     @Column(name = "mot_de_passe", nullable = false)
     private String motDePasse;
 
+    @Column(name = "google_sub", unique = true, length = 255)
+    private String googleSub;
+
     @Column(name = "telephone")
     private String telephone;
 
@@ -86,6 +89,9 @@ public class Utilisateur {
     public void setMotDePasse(String motDePasse) {
         this.motDePasse = motDePasse;
     }
+
+    public String getGoogleSub() { return googleSub; }
+    public void setGoogleSub(String googleSub) { this.googleSub = googleSub; }
 
     public String getTelephone() {
         return telephone;
